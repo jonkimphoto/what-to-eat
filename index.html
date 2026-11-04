@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>오늘 뭐 먹지?</title>
+  <meta name="description" content="배고플 때 뭐 먹을지 고민될 때 추천해주는 앱">
+  <meta name="theme-color" content="#e85d4c">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>">
+  <style>
+    :root {
+      --bg: #f7f5f2;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --text-secondary: #6b6b6b;
+      --accent: #e85d4c;
+      --accent-soft: #fff1ef;
+      --border: #ebe8e4;
+      --shadow: 0 8px 30px rgba(0,0,0,0.06);
+      --shadow-hover: 0 12px 40px rgba(0,0,0,0.1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans JP", "Noto Sans SC", sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      padding: 20px 16px;
+      line-height: 1.5;
+    }
+
+    .app {
+      max-width: 440px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 32px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-height: calc(100vh - 40px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 36px 28px 28px;
+      text-align: center;
+      position: relative;
+      background: linear-gradient(180deg, #fff 0%, #fff 100%);
+    }
+
+    header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    header p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .lang-select {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #f5f5f5;
+      color: #333;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .content {
+      flex: 1;
+      padding: 8px 24px 28px;
+    }
+
+    h2 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin: 28px 0 14px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    button {
+      padding: 16px 12px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      font-size: 14.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #fafafa;
+      color: var(--text);
+    }
+
+    button:hover {
+      background: #f0f0f0;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .result {
+      background: var(--accent-soft);
+      border-radius: 24px;
+      padding: 28px 24px;
+      text-align: center;
+      margin: 20px 0 8px;
+      display: none;
+      animation: fadeUp 0.4s ease;
+      border: 1px solid #ffe8e5;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .food-img {
+      width: 100%;
+      max-width: 260px;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    .food-name {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 6px;
+    }
+
+    .food-desc {
+      color: var(--text-secondary);
+      font-size: 14.5px;
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .actions .row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .actions button {
+      flex: 1;
+      border-radius: 14px;
+      font-weight: 600;
+    }
+
+    .primary {
+      background: var(--accent) !important;
+      color: white !important;
+      border: none !important;
+    }
+
+    .primary:hover {
+      background: #d94e3e !important;
+    }
+
+    #topRated {
+      background: #f5a623 !important;
+      color: white !important;
+      border: none !important;
+    }
+
+    #topRated:hover {
+      background: #e09520 !important;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 20px 24px 24px;
+      font-size: 12px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <select class="lang-select" id="langSelect">
+        <option value="ko">한국어</option>
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="ja">日本語</option>
+        <option value="zh">中文</option>
+      </select>
+      <h1 id="appTitle">오늘 뭐 먹지? 🍽️</h1>
+      <p id="appSubtitle">배고픈데 뭐 먹을지 모르겠을 때</p>
+    </header>
+
+    <div class="content">
+      <h2 id="moodTitle">지금 기분이 어때요?</h2>
+      <div class="grid" id="moodGrid"></div>
+
+      <div class="result" id="result">
+        <img class="food-img" id="foodImg" src="" alt="food" style="display:none;">
+        <div class="emoji" id="emoji" style="display:none;">🍜</div>
+        <div class="food-name" id="name">라면</div>
+        <div class="food-desc" id="desc">설명</div>
+        <div class="actions">
+          <div class="row">
+            <button id="retry">다시 추천</button>
+            <button class="primary" id="nearby">주변에 찾기 📍</button>
+          </div>
+          <button class="primary" id="topRated" style="background:#ffa502 !important;">리뷰 좋은 맛집 추천 ⭐</button>
+        </div>
+      </div>
+
+      <h2 id="catTitle">카테고리로 골라보기</h2>
+      <div class="grid" id="catGrid"></div>
+    </div>
+
+    <div class="footer" id="footerText">홈 화면에 추가하면 앱처럼 사용할 수 있어요</div>
+  </div>
+
+  <script>
+    const i18n = {
+      ko: {
+        title: "오늘 뭐 먹지? 🍽️",
+        subtitle: "배고픈데 뭐 먹을지 모르겠을 때",
+        moodTitle: "지금 기분이 어때요?",
+        catTitle: "카테고리로 골라보기",
+        retry: "다시 추천",
+        nearby: "차로 20분 내 찾기 📍",
+        topRated: "20분 내 리뷰 좋은 맛집 ⭐",
+        footer: "홈 화면에 추가하면 앱처럼 사용할 수 있어요",
+        moods: {
+          spicy: "매운 거 🔥", light: "담백한 거 🌿", hot: "따뜻한 거 🍲",
+          cold: "시원한 거 ❄️", sweet: "단 거 🍰", heavy: "든든한 거 🥩", random: "아무거나 🎲"
+        },
+        cats: {
+          korean: "한식", chinese: "중식", japanese: "일식", thai: "태국", vietnamese: "베트남",
+          indian: "인도", mexican: "멕시코", italian: "이탈리아", western: "양식",
+          snack: "분식", fast: "패스트푸드", dessert: "디저트", trendy: "트렌디 디저트", cafe: "카페"
+        },
+        foods: {
+          "마라탕": { name: "마라탕", desc: "얼얼하고 중독성 있는 마라 국물", query: "마라탕" },
+          "불닭볶음면": { name: "불닭볶음면", desc: "매운 라면의 정석", query: "불닭볶음면" },
+          "떡볶이": { name: "떡볶이", desc: "달콤매콤한 국민 간식", query: "떡볶이" },
+          "김치찌개": { name: "김치찌개", desc: "칼칼하고 속 시원한 한식", query: "김치찌개" },
+          "짬뽕": { name: "짬뽕", desc: "얼큰한 해산물 국물", query: "짬뽕" },
+          "닭발": { name: "닭발", desc: "매콤하고 쫄깃한 닭발", query: "닭발" },
+          "비빔밥": { name: "비빔밥", desc: "신선한 채소와 고기의 조화", query: "비빔밥" },
+          "샐러드": { name: "샐러드", desc: "가볍고 건강한 한 끼", query: "샐러드" },
+          "국수": { name: "국수", desc: "담백한 면 요리", query: "국수" },
+          "초밥": { name: "초밥", desc: "깔끔하고 신선한 일식", query: "초밥" },
+          "포케": { name: "포케", desc: "건강하고 가벼운 포케", query: "포케" },
+          "순두부찌개": { name: "순두부찌개", desc: "부드럽고 따뜻한 국물", query: "순두부찌개" },
+          "라면": { name: "라면", desc: "언제 먹어도 맛있는 라면", query: "라면" },
+          "부대찌개": { name: "부대찌개", desc: "푸짐하고 따뜻한 찌개", query: "부대찌개" },
+          "감자탕": { name: "감자탕", desc: "진한 국물의 감자탕", query: "감자탕" },
+          "냉면": { name: "냉면", desc: "시원하고 깔끔한 여름 별미", query: "냉면" },
+          "비빔국수": { name: "비빔국수", desc: "새콤달콤 시원한 국수", query: "비빔국수" },
+          "냉모밀": { name: "냉모밀", desc: "깔끔하고 시원한 일식", query: "냉모밀" },
+          "아이스 아메리카노": { name: "아이스 아메리카노", desc: "시원한 커피", query: "아이스 아메리카노" },
+          "빙수": { name: "빙수", desc: "달콤하고 시원한 디저트", query: "빙수" },
+          "케이크": { name: "케이크", desc: "달달한 디저트 타임", query: "케이크" },
+          "마카롱": { name: "마카롱", desc: "예쁜 마카롱", query: "마카롱" },
+          "아이스크림": { name: "아이스크림", desc: "시원하고 달콤한 간식", query: "아이스크림" },
+          "삼겹살": { name: "삼겹살", desc: "든든하고 고소한 고기 요리", query: "삼겹살" },
+          "치킨": { name: "치킨", desc: "바삭하고 푸짐한 치킨", query: "치킨" },
+          "피자": { name: "피자", desc: "치즈 듬뿍 피자", query: "피자" },
+          "돈까스": { name: "돈까스", desc: "바삭하고 든든한 돈까스", query: "돈까스" },
+          "스테이크": { name: "스테이크", desc: "육즙 가득한 스테이크", query: "스테이크" },
+          "짜장면": { name: "짜장면", desc: "달콤한 중식의 대표", query: "짜장면" },
+          "햄버거": { name: "햄버거", desc: "간편하고 든든한 한 끼", query: "햄버거" },
+          "파스타": { name: "파스타", desc: "부드러운 크림 파스타", query: "파스타" },
+          "라멘": { name: "라멘", desc: "진한 육수 라멘", query: "라멘" },
+          "불고기": { name: "불고기", desc: "달콤한 불고기", query: "불고기" },
+          "된장찌개": { name: "된장찌개", desc: "구수한 된장찌개", query: "된장찌개" },
+          "갈비탕": { name: "갈비탕", desc: "진한 갈비탕", query: "갈비탕" },
+          "탕수육": { name: "탕수육", desc: "바삭한 탕수육", query: "탕수육" },
+          "마라샹궈": { name: "마라샹궈", desc: "얼얼한 마라샹궈", query: "마라샹궈" },
+          "돈카츠": { name: "돈카츠", desc: "바삭한 돈카츠", query: "돈카츠" },
+          "우동": { name: "우동", desc: "따뜻한 우동", query: "우동" },
+          "리조또": { name: "리조또", desc: "부드러운 리조또", query: "리조또" },
+          "김밥": { name: "김밥", desc: "간편한 김밥", query: "김밥" },
+          "순대": { name: "순대", desc: "쫄깃한 순대", query: "순대" },
+          "튀김": { name: "튀김", desc: "바삭한 튀김", query: "분식 튀김" },
+          "타코": { name: "타코", desc: "매콤한 타코", query: "타코" },
+          "아메리카노": { name: "아메리카노", desc: "깔끔한 커피", query: "카페" },
+          "라떼": { name: "라떼", desc: "부드러운 라떼", query: "카페 라떼" },
+          "디저트": { name: "디저트", desc: "달달한 디저트", query: "카페 디저트" },
+          "팟타이": { name: "팟타이", desc: "새우와 땅콩이 들어간 태국 볶음면", query: "팟타이" },
+          "똠얌꿍": { name: "똠얌꿍", desc: "새콤매콤한 태국 수프", query: "똠얌꿍" },
+          "그린커리": { name: "그린커리", desc: "향긋한 태국 그린 커리", query: "그린커리" },
+          "쌀국수": { name: "쌀국수", desc: "신선한 허브가 들어간 베트남 쌀국수", query: "쌀국수 포" },
+          "반미": { name: "반미", desc: "베트남식 바게트 샌드위치", query: "반미" },
+          "월남쌈": { name: "월남쌈", desc: "신선한 야채와 새우 월남쌈", query: "월남쌈" },
+          "버터치킨": { name: "버터치킨", desc: "크리미한 인도 버터 치킨 커리", query: "버터치킨" },
+          "난": { name: "난", desc: "부드러운 인도 난 빵", query: "난" },
+          "비리야니": { name: "비리야니", desc: "향신료가 가득한 인도 비리야니", query: "비리야니" },
+          "부리또": { name: "부리또", desc: "든든한 멕시코 부리또", query: "부리또" },
+          "과카몰리": { name: "과카몰리", desc: "신선한 아보카도 과카몰리", query: "과카몰리" },
+          "마르게리타피자": { name: "마르게리타 피자", desc: "바질과 모차렐라의 클래식 피자", query: "마르게리타 피자" },
+          "크로와상": { name: "크로와상", desc: "바삭한 프랑스 크로와상", query: "크로와상" },
+          "말차라떼": { name: "말차라떼", desc: "진한 말차 맛의 트렌디한 라떼", query: "말차라떼" },
+          "밀크티": { name: "밀크티", desc: "부드러운 밀크티", query: "밀크티" },
+          "말차케이크": { name: "말차케이크", desc: "말차 가루를 뿌린 부드러운 케이크", query: "말차케이크" },
+          "수플레팬케이크": { name: "수플레 팬케이크", desc: "폭신폭신한 요즘 유행 팬케이크", query: "수플레 팬케이크" },
+          "버블티": { name: "버블티", desc: "타피오카 펄이 들어간 버블티", query: "버블티" }
+        }
+      },
+      en: {
+        title: "What to Eat Today? 🍽️",
+        subtitle: "When you're hungry but don't know what to eat",
+        moodTitle: "How are you feeling?",
+        catTitle: "Browse by Category",
+        retry: "Recommend Again",
+        nearby: "Find Nearby 📍",
+        topRated: "Top Rated Nearby ⭐",
+        footer: "Add to Home Screen to use like an app",
+        moods: {
+          spicy: "Spicy 🔥", light: "Light 🌿", hot: "Hot & Warm 🍲",
+          cold: "Cold & Refreshing ❄️", sweet: "Sweet 🍰", heavy: "Hearty 🥩", random: "Surprise Me 🎲"
+        },
+        cats: {
+          korean: "Korean", chinese: "Chinese", japanese: "Japanese", thai: "Thai", vietnamese: "Vietnamese",
+          indian: "Indian", mexican: "Mexican", italian: "Italian", western: "Western",
+          snack: "Street Food", fast: "Fast Food", dessert: "Dessert", trendy: "Trendy Desserts", cafe: "Cafe"
+        },
+        foods: {
+          "마라탕": { name: "Malatang", desc: "Numbing and addictive spicy soup", query: "malatang" },
+          "불닭볶음면": { name: "Buldak Ramen", desc: "The ultimate spicy ramen", query: "buldak ramen" },
+          "떡볶이": { name: "Tteokbokki", desc: "Sweet and spicy rice cakes", query: "tteokbokki" },
+          "김치찌개": { name: "Kimchi Stew", desc: "Spicy and comforting Korean stew", query: "kimchi stew" },
+          "짬뽕": { name: "Jjamppong", desc: "Spicy seafood noodle soup", query: "jjamppong" },
+          "닭발": { name: "Chicken Feet", desc: "Spicy and chewy chicken feet", query: "chicken feet" },
+          "비빔밥": { name: "Bibimbap", desc: "Fresh veggies and meat rice bowl", query: "bibimbap" },
+          "샐러드": { name: "Salad", desc: "Light and healthy meal", query: "salad" },
+          "국수": { name: "Noodles", desc: "Simple and light noodles", query: "noodles" },
+          "초밥": { name: "Sushi", desc: "Fresh and clean Japanese sushi", query: "sushi" },
+          "포케": { name: "Poke", desc: "Healthy and light poke bowl", query: "poke bowl" },
+          "순두부찌개": { name: "Sundubu Jjigae", desc: "Soft and warm tofu stew", query: "sundubu" },
+          "라면": { name: "Ramen", desc: "Always delicious ramen", query: "ramen" },
+          "부대찌개": { name: "Budae Jjigae", desc: "Hearty army base stew", query: "budae jjigae" },
+          "감자탕": { name: "Gamjatang", desc: "Rich pork bone soup", query: "gamjatang" },
+          "냉면": { name: "Naengmyeon", desc: "Cool and refreshing noodles", query: "naengmyeon" },
+          "비빔국수": { name: "Bibim Guksu", desc: "Sweet and sour cold noodles", query: "bibim guksu" },
+          "냉모밀": { name: "Cold Soba", desc: "Clean and refreshing soba", query: "cold soba" },
+          "아이스 아메리카노": { name: "Iced Americano", desc: "Refreshing coffee", query: "iced americano" },
+          "빙수": { name: "Bingsu", desc: "Sweet and icy dessert", query: "bingsu" },
+          "케이크": { name: "Cake", desc: "Sweet dessert time", query: "cake" },
+          "마카롱": { name: "Macaron", desc: "Pretty macarons", query: "macaron" },
+          "아이스크림": { name: "Ice Cream", desc: "Cold and sweet treat", query: "ice cream" },
+          "삼겹살": { name: "Samgyeopsal", desc: "Hearty and savory pork belly", query: "samgyeopsal" },
+          "치킨": { name: "Fried Chicken", desc: "Crispy and filling chicken", query: "fried chicken" },
+          "피자": { name: "Pizza", desc: "Cheesy pizza", query: "pizza" },
+          "돈까스": { name: "Tonkatsu", desc: "Crispy pork cutlet", query: "tonkatsu" },
+          "스테이크": { name: "Steak", desc: "Juicy steak", query: "steak" },
+          "짜장면": { name: "Jjajangmyeon", desc: "Sweet black bean noodles", query: "jjajangmyeon" },
+          "햄버거": { name: "Burger", desc: "Simple and filling burger", query: "burger" },
+          "파스타": { name: "Pasta", desc: "Creamy pasta", query: "pasta" },
+          "라멘": { name: "Ramen", desc: "Rich broth ramen", query: "ramen" },
+          "불고기": { name: "Bulgogi", desc: "Sweet marinated beef", query: "bulgogi" },
+          "된장찌개": { name: "Doenjang Jjigae", desc: "Savory soybean paste stew", query: "doenjang jjigae" },
+          "갈비탕": { name: "Galbitang", desc: "Rich beef rib soup", query: "galbitang" },
+          "탕수육": { name: "Tangsuyuk", desc: "Crispy sweet and sour pork", query: "tangsuyuk" },
+          "마라샹궈": { name: "Mala Xiang Guo", desc: "Numbing spicy dry pot", query: "mala xiang guo" },
+          "돈카츠": { name: "Tonkatsu", desc: "Crispy pork cutlet", query: "tonkatsu" },
+          "우동": { name: "Udon", desc: "Warm udon noodles", query: "udon" },
+          "리조또": { name: "Risotto", desc: "Creamy risotto", query: "risotto" },
+          "김밥": { name: "Gimbap", desc: "Easy rice rolls", query: "gimbap" },
+          "순대": { name: "Sundae", desc: "Chewy blood sausage", query: "sundae" },
+          "튀김": { name: "Fried Food", desc: "Crispy fried snacks", query: "korean fried" },
+          "타코": { name: "Taco", desc: "Spicy tacos", query: "taco" },
+          "아메리카노": { name: "Americano", desc: "Clean coffee", query: "cafe" },
+          "라떼": { name: "Latte", desc: "Smooth latte", query: "latte" },
+          "디저트": { name: "Dessert", desc: "Sweet dessert", query: "dessert" }
+        }
+      },
+      es: {
+        title: "¿Qué comer hoy? 🍽️",
+        subtitle: "Cuando tienes hambre pero no sabes qué comer",
+        moodTitle: "¿Cómo te sientes?",
+        catTitle: "Ver por categoría",
+        retry: "Recomendar de nuevo",
+        nearby: "Buscar cerca 📍",
+        topRated: "Mejor valorados cerca ⭐",
+        footer: "Añade a la pantalla de inicio para usarlo como app",
+        moods: {
+          spicy: "Picante 🔥", light: "Ligero 🌿", hot: "Caliente 🍲",
+          cold: "Frío y fresco ❄️", sweet: "Dulce 🍰", heavy: "Contundente 🥩", random: "Sorpréndeme 🎲"
+        },
+        cats: {
+          korean: "Coreano", chinese: "Chino", japanese: "Japonés", thai: "Tailandés", vietnamese: "Vietnamita",
+          indian: "Indio", mexican: "Mexicano", italian: "Italiano", western: "Occidental",
+          snack: "Comida callejera", fast: "Comida rápida", dessert: "Postre", trendy: "Postres de moda", cafe: "Café"
+        },
+        foods: {
+          "마라탕": { name: "Malatang", desc: "Sopa picante y adictiva", query: "malatang" },
+          "불닭볶음면": { name: "Ramen Buldak", desc: "El ramen más picante", query: "buldak ramen" },
+          "떡볶이": { name: "Tteokbokki", desc: "Pasteles de arroz dulces y picantes", query: "tteokbokki" },
+          "김치찌개": { name: "Estofado de Kimchi", desc: "Estofado coreano picante y reconfortante", query: "kimchi stew" },
+          "짬뽕": { name: "Jjamppong", desc: "Sopa de fideos picante con mariscos", query: "jjamppong" },
+          "닭발": { name: "Patas de pollo", desc: "Patas de pollo picantes y masticables", query: "chicken feet" },
+          "비빔밥": { name: "Bibimbap", desc: "Arroz con verduras y carne", query: "bibimbap" },
+          "샐러드": { name: "Ensalada", desc: "Comida ligera y saludable", query: "ensalada" },
+          "국수": { name: "Fideos", desc: "Fideos simples y ligeros", query: "fideos" },
+          "초밥": { name: "Sushi", desc: "Sushi fresco y limpio", query: "sushi" },
+          "포케": { name: "Poke", desc: "Bowl de poke saludable", query: "poke" },
+          "순두부찌개": { name: "Estofado de tofu", desc: "Estofado de tofu suave y caliente", query: "sundubu" },
+          "라면": { name: "Ramen", desc: "Ramen siempre delicioso", query: "ramen" },
+          "부대찌개": { name: "Estofado Budae", desc: "Estofado abundante estilo ejército", query: "budae jjigae" },
+          "감자탕": { name: "Sopa de huesos", desc: "Sopa rica de huesos de cerdo", query: "gamjatang" },
+          "냉면": { name: "Naengmyeon", desc: "Fideos fríos y refrescantes", query: "naengmyeon" },
+          "비빔국수": { name: "Fideos Bibim", desc: "Fideos fríos agridulces", query: "bibim guksu" },
+          "냉모밀": { name: "Soba frío", desc: "Soba limpio y refrescante", query: "soba frío" },
+          "아이스 아메리카노": { name: "Americano helado", desc: "Café refrescante", query: "americano helado" },
+          "빙수": { name: "Bingsu", desc: "Postre helado y dulce", query: "bingsu" },
+          "케이크": { name: "Pastel", desc: "Momento de postre dulce", query: "pastel" },
+          "마카롱": { name: "Macaron", desc: "Macarons bonitos", query: "macaron" },
+          "아이스크림": { name: "Helado", desc: "Dulce frío y refrescante", query: "helado" },
+          "삼겹살": { name: "Panceta de cerdo", desc: "Panceta jugosa y sabrosa", query: "samgyeopsal" },
+          "치킨": { name: "Pollo frito", desc: "Pollo crujiente y abundante", query: "pollo frito" },
+          "피자": { name: "Pizza", desc: "Pizza con mucho queso", query: "pizza" },
+          "돈까스": { name: "Tonkatsu", desc: "Chuleta de cerdo crujiente", query: "tonkatsu" },
+          "스테이크": { name: "Filete", desc: "Filete jugoso", query: "filete" },
+          "짜장면": { name: "Fideos Jjajang", desc: "Fideos de frijol negro dulces", query: "jjajangmyeon" },
+          "햄버거": { name: "Hamburguesa", desc: "Hamburguesa simple y contundente", query: "hamburguesa" },
+          "파스타": { name: "Pasta", desc: "Pasta cremosa", query: "pasta" },
+          "라멘": { name: "Ramen", desc: "Ramen con caldo rico", query: "ramen" },
+          "불고기": { name: "Bulgogi", desc: "Ternera marinada dulce", query: "bulgogi" },
+          "된장찌개": { name: "Estofado de pasta de soja", desc: "Estofado sabroso de soja", query: "doenjang" },
+          "갈비탕": { name: "Sopa de costillas", desc: "Sopa rica de costillas", query: "galbitang" },
+          "탕수육": { name: "Cerdo agridulce", desc: "Cerdo crujiente agridulce", query: "tangsuyuk" },
+          "마라샹궈": { name: "Mala Xiang Guo", desc: "Olla seca picante y entumecedora", query: "mala xiang guo" },
+          "돈카츠": { name: "Tonkatsu", desc: "Chuleta crujiente", query: "tonkatsu" },
+          "우동": { name: "Udon", desc: "Fideos udon calientes", query: "udon" },
+          "리조또": { name: "Risotto", desc: "Risotto cremoso", query: "risotto" },
+          "김밥": { name: "Gimbap", desc: "Rollos de arroz fáciles", query: "gimbap" },
+          "순대": { name: "Morcilla coreana", desc: "Morcilla masticable", query: "sundae" },
+          "튀김": { name: "Frituras", desc: "Snacks fritos crujientes", query: "frituras" },
+          "타코": { name: "Taco", desc: "Tacos picantes", query: "taco" },
+          "아메리카노": { name: "Americano", desc: "Café limpio", query: "café" },
+          "라떼": { name: "Latte", desc: "Latte suave", query: "latte" },
+          "디저트": { name: "Postre", desc: "Postre dulce", query: "postre" }
+        }
+      },
+      ja: {
+        title: "今日何食べる？ 🍽️",
+        subtitle: "お腹空いたけど何食べるか分からないとき",
+        moodTitle: "今の気分は？",
+        catTitle: "カテゴリで選ぶ",
+        retry: "もう一度おすすめ",
+        nearby: "近くで探す 📍",
+        topRated: "高評価のお店を探す ⭐",
+        footer: "ホーム画面に追加するとアプリのように使えます",
+        moods: {
+          spicy: "辛いもの 🔥", light: "あっさり 🌿", hot: "温かいもの 🍲",
+          cold: "冷たいもの ❄️", sweet: "甘いもの 🍰", heavy: "がっつり 🥩", random: "おまかせ 🎲"
+        },
+        cats: {
+          korean: "韓国料理", chinese: "中華", japanese: "和食", thai: "タイ料理", vietnamese: "ベトナム料理",
+          indian: "インド料理", mexican: "メキシコ料理", italian: "イタリア料理", western: "洋食",
+          snack: "軽食・屋台", fast: "ファストフード", dessert: "デザート", trendy: "トレンドデザート", cafe: "カフェ"
+        },
+        foods: {
+          "마라탕": { name: "麻辣湯", desc: "しびれるほど美味しいスープ", query: "麻辣湯" },
+          "불닭볶음면": { name: "ブルダック炒め麺", desc: "激辛ラーメンの定番", query: "ブルダック" },
+          "떡볶이": { name: "トッポッキ", desc: "甘辛もちもち韓国おやつ", query: "トッポッキ" },
+          "김치찌개": { name: "キムチチゲ", desc: "ピリ辛で体が温まる鍋", query: "キムチチゲ" },
+          "짬뽕": { name: "チャンポン", desc: "海鮮の辛いラーメン", query: "チャンポン" },
+          "닭발": { name: "鶏足", desc: "ピリ辛でコリコリした鶏足", query: "鶏足" },
+          "비빔밥": { name: "ビビンバ", desc: "野菜と肉の混ぜご飯", query: "ビビンバ" },
+          "샐러드": { name: "サラダ", desc: "軽くてヘルシーな一品", query: "サラダ" },
+          "국수": { name: "麺", desc: "あっさりした麺料理", query: "麺" },
+          "초밥": { name: "寿司", desc: "新鮮でさっぱりした寿司", query: "寿司" },
+          "포케": { name: "ポケ", desc: "ヘルシーなポケボウル", query: "ポケ" },
+          "순두부찌개": { name: "スンドゥブチゲ", desc: "とろっとろ温かい鍋", query: "スンドゥブ" },
+          "라면": { name: "ラーメン", desc: "いつ食べても美味しいラーメン", query: "ラーメン" },
+          "부대찌개": { name: "プデチゲ", desc: "ボリューム満点の鍋", query: "プデチゲ" },
+          "감자탕": { name: "カムジャタン", desc: "濃厚な豚骨スープ", query: "カムジャタン" },
+          "냉면": { name: "冷麺", desc: "さっぱり冷たい麺", query: "冷麺" },
+          "비빔국수": { name: "ビビンククス", desc: "甘酸っぱい冷たい麺", query: "ビビンククス" },
+          "냉모밀": { name: "冷やし蕎麦", desc: "さっぱりした蕎麦", query: "冷やし蕎麦" },
+          "아이스 아메리카노": { name: "アイスアメリカーノ", desc: "さっぱりコーヒー", query: "アイスアメリカーノ" },
+          "빙수": { name: "ビンス", desc: "甘くて冷たいデザート", query: "ビンス" },
+          "케이크": { name: "ケーキ", desc: "甘いデザートタイム", query: "ケーキ" },
+          "마카롱": { name: "マカロン", desc: "かわいいマカロン", query: "マカロン" },
+          "아이스크림": { name: "アイスクリーム", desc: "冷たくて甘いおやつ", query: "アイスクリーム" },
+          "삼겹살": { name: "サムギョプサル", desc: "がっつり美味しい豚バラ", query: "サムギョプサル" },
+          "치킨": { name: "チキン", desc: "サクサクでボリューム満点", query: "チキン" },
+          "피자": { name: "ピザ", desc: "チーズたっぷりのピザ", query: "ピザ" },
+          "돈까스": { name: "トンカツ", desc: "サクサクの豚カツ", query: "トンカツ" },
+          "스테이크": { name: "ステーキ", desc: "ジューシーなステーキ", query: "ステーキ" },
+          "짜장면": { name: "ジャージャン麺", desc: "甘い黒豆ソースの麺", query: "ジャージャン麺" },
+          "햄버거": { name: "ハンバーガー", desc: "手軽でボリュームある一品", query: "ハンバーガー" },
+          "파스타": { name: "パスタ", desc: "クリーミーなパスタ", query: "パスタ" },
+          "라멘": { name: "ラーメン", desc: "濃厚なスープのラーメン", query: "ラーメン" },
+          "불고기": { name: "プルコギ", desc: "甘い味付けの牛肉", query: "プルコギ" },
+          "된장찌개": { name: "テンジャンチゲ", desc: "こっくりした味噌鍋", query: "テンジャンチゲ" },
+          "갈비탕": { name: "カルビタン", desc: "濃厚なカルビスープ", query: "カルビタン" },
+          "탕수육": { name: "酢豚", desc: "サクサク甘酢の豚", query: "酢豚" },
+          "마라샹궈": { name: "麻辣香鍋", desc: "しびれる辛い乾鍋", query: "麻辣香鍋" },
+          "돈카츠": { name: "トンカツ", desc: "サクサクの豚カツ", query: "トンカツ" },
+          "우동": { name: "うどん", desc: "温かいうどん", query: "うどん" },
+          "리조또": { name: "リゾット", desc: "クリーミーなリゾット", query: "リゾット" },
+          "김밥": { name: "キンパ", desc: "手軽な韓国のり巻き", query: "キンパ" },
+          "순대": { name: "スンデ", desc: "もっちりした韓国ソーセージ", query: "スンデ" },
+          "튀김": { name: "揚げ物", desc: "サクサクの揚げ物", query: "揚げ物" },
+          "타코": { name: "タコス", desc: "辛いタコス", query: "タコス" },
+          "아메리카노": { name: "アメリカーノ", desc: "さっぱりコーヒー", query: "カフェ" },
+          "라떼": { name: "ラテ", desc: "まろやかなラテ", query: "ラテ" },
+          "디저트": { name: "デザート", desc: "甘いデザート", query: "デザート" }
+        }
+      },
+      zh: {
+        title: "今天吃什么？ 🍽️",
+        subtitle: "肚子饿了却不知道吃什么的时候",
+        moodTitle: "现在心情怎么样？",
+        catTitle: "按分类选择",
+        retry: "再推荐一次",
+        nearby: "附近查找 📍",
+        topRated: "高评分餐厅推荐 ⭐",
+        footer: "添加到主屏幕即可像应用一样使用",
+        moods: {
+          spicy: "辣的 🔥", light: "清淡 🌿", hot: "热的 🍲",
+          cold: "凉的 ❄️", sweet: "甜的 🍰", heavy: "丰盛的 🥩", random: "随便来一个 🎲"
+        },
+        cats: {
+          korean: "韩餐", chinese: "中餐", japanese: "日料", thai: "泰国菜", vietnamese: "越南菜",
+          indian: "印度菜", mexican: "墨西哥菜", italian: "意大利菜", western: "西餐",
+          snack: "小吃", fast: "快餐", dessert: "甜点", trendy: "流行甜点", cafe: "咖啡"
+        },
+        foods: {
+          "마라탕": { name: "麻辣烫", desc: "麻辣鲜香的汤底", query: "麻辣烫" },
+          "불닭볶음면": { name: "火鸡面", desc: "超辣火鸡面", query: "火鸡面" },
+          "떡볶이": { name: "辣炒年糕", desc: "甜辣可口的韩国小吃", query: "辣炒年糕" },
+          "김치찌개": { name: "泡菜汤", desc: "辛辣暖胃的韩式汤", query: "泡菜汤" },
+          "짬뽕": { name: "海鲜面", desc: "辣海鲜汤面", query: "海鲜面" },
+          "닭발": { name: "鸡爪", desc: "麻辣有嚼劲的鸡爪", query: "鸡爪" },
+          "비빔밥": { name: "拌饭", desc: "新鲜蔬菜与肉的拌饭", query: "拌饭" },
+          "샐러드": { name: "沙拉", desc: "清淡健康的一餐", query: "沙拉" },
+          "국수": { name: "面条", desc: "清淡的面食", query: "面条" },
+          "초밥": { name: "寿司", desc: "新鲜清爽的日式寿司", query: "寿司" },
+          "포케": { name: "波奇", desc: "健康清淡的波奇碗", query: "波奇" },
+          "순두부찌개": { name: "嫩豆腐汤", desc: "软嫩温暖的豆腐汤", query: "嫩豆腐" },
+          "라면": { name: "拉面", desc: "什么时候吃都好吃的拉面", query: "拉面" },
+          "부대찌개": { name: "部队锅", desc: "丰盛温暖的部队锅", query: "部队锅" },
+          "감자탕": { name: "土豆汤", desc: "浓郁的猪骨汤", query: "土豆汤" },
+          "냉면": { name: "冷面", desc: "清爽可口的夏日冷面", query: "冷面" },
+          "비빔국수": { name: "拌面", desc: "酸甜可口的冷拌面", query: "拌面" },
+          "냉모밀": { name: "冷荞麦面", desc: "清爽的冷荞麦", query: "冷荞麦" },
+          "아이스 아메리카노": { name: "冰美式", desc: "清爽的咖啡", query: "冰美式" },
+          "빙수": { name: "刨冰", desc: "甜蜜冰凉的甜点", query: "刨冰" },
+          "케이크": { name: "蛋糕", desc: "甜蜜的甜点时光", query: "蛋糕" },
+          "마카롱": { name: "马卡龙", desc: "漂亮的马卡龙", query: "马卡龙" },
+          "아이스크림": { name: "冰淇淋", desc: "冰凉甜蜜的零食", query: "冰淇淋" },
+          "삼겹살": { name: "五花肉", desc: "丰盛香美的五花肉", query: "五花肉" },
+          "치킨": { name: "炸鸡", desc: "酥脆丰盛的炸鸡", query: "炸鸡" },
+          "피자": { name: "披萨", desc: "芝士满满的披萨", query: "披萨" },
+          "돈까스": { name: "猪排", desc: "酥脆的炸猪排", query: "猪排" },
+          "스테이크": { name: "牛排", desc: "多汁的牛排", query: "牛排" },
+          "짜장면": { name: "炸酱面", desc: "甜咸的炸酱面", query: "炸酱面" },
+          "햄버거": { name: "汉堡", desc: "简单丰盛的一餐", query: "汉堡" },
+          "파스타": { name: "意大利面", desc: "奶油意大利面", query: "意大利面" },
+          "라멘": { name: "拉面", desc: "浓汤拉面", query: "拉面" },
+          "불고기": { name: "烤肉", desc: "甜味腌制的牛肉", query: "烤肉" },
+          "된장찌개": { name: "大酱汤", desc: "香浓的大酱汤", query: "大酱汤" },
+          "갈비탕": { name: "排骨汤", desc: "浓郁的排骨汤", query: "排骨汤" },
+          "탕수육": { name: "糖醋肉", desc: "酥脆的糖醋肉", query: "糖醋肉" },
+          "마라샹궈": { name: "麻辣香锅", desc: "麻辣干锅", query: "麻辣香锅" },
+          "돈카츠": { name: "猪排", desc: "酥脆炸猪排", query: "猪排" },
+          "우동": { name: "乌冬面", desc: "温暖的乌冬面", query: "乌冬面" },
+          "리조또": { name: "意大利饭", desc: "奶油意大利饭", query: "意大利饭" },
+          "김밥": { name: "紫菜包饭", desc: "方便的紫菜包饭", query: "紫菜包饭" },
+          "순대": { name: "血肠", desc: "有嚼劲的血肠", query: "血肠" },
+          "튀김": { name: "炸物", desc: "酥脆的炸物", query: "炸物" },
+          "타코": { name: "塔可", desc: "辣味塔可", query: "塔可" },
+          "아메리카노": { name: "美式咖啡", desc: "清爽的咖啡", query: "咖啡" },
+          "라떼": { name: "拿铁", desc: "顺滑的拿铁", query: "拿铁" },
+          "디저트": { name: "甜点", desc: "甜蜜的甜点", query: "甜点" }
+        }
+      }
+    };
+
+    // Food key lists (same across languages, using Korean keys as IDs)
+    const foodLists = {
+      spicy: ["마라탕", "불닭볶음면", "떡볶이", "김치찌개", "짬뽕", "닭발"],
+      light: ["비빔밥", "샐러드", "국수", "초밥", "포케"],
+      hot: ["김치찌개", "순두부찌개", "라면", "부대찌개", "감자탕"],
+      cold: ["냉면", "비빔국수", "냉모밀", "아이스 아메리카노"],
+      sweet: ["빙수", "케이크", "마카롱", "아이스크림"],
+      heavy: ["삼겹살", "치킨", "피자", "돈까스", "스테이크"],
+      random: ["김치찌개", "초밥", "짜장면", "햄버거", "떡볶이", "파스타", "라멘"]
+    };
+
+    const categoryKeys = {
+      korean: ["김치찌개", "순두부찌개", "라면", "부대찌개", "감자탕", "마라탕", "떡볶이", "불고기", "된장찌개", "갈비탕", "비빔밥"],
+      chinese: ["짜장면", "짬뽕", "탕수육", "마라샹궈"],
+      japanese: ["초밥", "라멘", "돈카츠", "우동"],
+      thai: ["팟타이", "똠얌꿍", "그린커리"],
+      vietnamese: ["쌀국수", "반미", "월남쌈"],
+      indian: ["버터치킨", "난", "비리야니"],
+      mexican: ["타코", "부리또", "과카몰리"],
+      italian: ["파스타", "마르게리타피자", "리조또"],
+      western: ["스테이크", "햄버거", "샐러드", "크로와상"],
+      snack: ["떡볶이", "김밥", "순대", "튀김"],
+      fast: ["치킨", "피자", "햄버거", "타코"],
+      dessert: ["빙수", "케이크", "마카롱", "아이스크림"],
+      trendy: ["말차라떼", "밀크티", "말차케이크", "수플레팬케이크", "버블티"],
+      cafe: ["아메리카노", "라떼", "디저트"]
+    };
+
+    let currentLang = localStorage.getItem("lang") || "ko";
+    let currentQuery = "";
+    let lastList = foodLists.random;
+
+    function t(key) {
+      return i18n[currentLang][key] || i18n.ko[key];
+    }
+
+    function getFood(key) {
+      return i18n[currentLang].foods[key] || i18n.ko.foods[key];
+    }
+
+    function randomFrom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function updateUI() {
+      document.documentElement.lang = currentLang;
+      document.getElementById("appTitle").textContent = t("title");
+      document.getElementById("appSubtitle").textContent = t("subtitle");
+      document.getElementById("moodTitle").textContent = t("moodTitle");
+      document.getElementById("catTitle").textContent = t("catTitle");
+      document.getElementById("retry").textContent = t("retry");
+      document.getElementById("nearby").textContent = t("nearby");
+      document.getElementById("topRated").textContent = t("topRated");
+      document.getElementById("footerText").textContent = t("footer");
+      document.getElementById("langSelect").value = currentLang;
+
+      // Rebuild buttons
+      buildMoods();
+      buildCats();
+    }
+
+    function show(key, list) {
+      lastList = list || foodLists.random;
+      const food = getFood(key);
+      currentQuery = food.query;
+
+      // Image mapping for intuitive photos
+      const imageMap = {
+        "마라탕": "images/malatang.jpg",
+        "불닭볶음면": "images/buldak.jpg",
+        "떡볶이": "images/tteokbokki.jpg",
+        "김치찌개": "images/kimchi.jpg",
+        "짬뽕": "images/jjamppong.jpg",
+        "비빔밥": "images/bibimbap.jpg",
+        "초밥": "images/sushi.jpg",
+        "라면": "images/ramen.jpg",
+        "삼겹살": "images/samgyeopsal.jpg",
+        "치킨": "images/chicken.jpg",
+        "피자": "images/pizza.jpg",
+        "파스타": "images/pasta.jpg",
+        "라멘": "images/japanese_ramen.jpg",
+        "냉면": "images/naengmyeon.jpg",
+        "햄버거": "images/burger.jpg",
+        "김밥": "images/gimbap.jpg",
+        "아이스 아메리카노": "images/americano.jpg",
+        "아메리카노": "images/americano.jpg",
+        "빙수": "images/bingsu.jpg",
+        "불고기": "images/bulgogi.jpg",
+        "팟타이": "images/padthai.jpg",
+        "쌀국수": "images/pho.jpg",
+        "버터치킨": "images/butterchicken.jpg",
+        "타코": "images/tacos.jpg",
+        "마르게리타피자": "images/margherita.jpg",
+        "크로와상": "images/croissant.jpg",
+        "순두부찌개": "images/sundubu.jpg",
+        "샐러드": "images/salad.jpg",
+        "말차라떼": "images/matcha.jpg",
+        "밀크티": "images/milktea.jpg",
+        "말차케이크": "images/matchacake.jpg",
+        "수플레팬케이크": "images/souffle.jpg",
+        "버블티": "images/milktea.jpg"
+      };
+
+      const imgSrc = imageMap[key];
+      const imgEl = document.getElementById("foodImg");
+      const emojiEl = document.getElementById("emoji");
+
+      if (imgSrc) {
+        imgEl.src = imgSrc;
+        imgEl.style.display = "block";
+        emojiEl.style.display = "none";
+      } else {
+        // Fallback to emoji for foods without generated images
+        imgEl.style.display = "none";
+        emojiEl.style.display = "block";
+        const emojiMap = {
+          "닭발": "🍗", "샐러드": "🥬", "국수": "🍜", "포케": "🥗",
+          "순두부찌개": "🍲", "부대찌개": "🍲", "감자탕": "🍲",
+          "비빔국수": "🍜", "냉모밀": "🥢", "케이크": "🍰", "마카롱": "🍪", "아이스크림": "🍦",
+          "돈까스": "🍖", "스테이크": "🥩", "짜장면": "🍜",
+          "된장찌개": "🍲", "갈비탕": "🍲", "탕수육": "🍖", "마라샹궈": "🌶️",
+          "돈카츠": "🍖", "우동": "🍜", "리조또": "🍚", "순대": "🌭",
+          "튀김": "🍤", "타코": "🌮", "라떼": "🥛", "디저트": "🍰"
+        };
+        emojiEl.textContent = emojiMap[key] || "🍽️";
+      }
+
+      document.getElementById("name").textContent = food.name;
+      document.getElementById("desc").textContent = food.desc;
+      document.getElementById("result").style.display = "block";
+      document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function buildMoods() {
+      const grid = document.getElementById("moodGrid");
+      grid.innerHTML = "";
+      const moods = i18n[currentLang].moods;
+      Object.keys(foodLists).forEach(key => {
+        if (moods[key]) {
+          const btn = document.createElement("button");
+          btn.textContent = moods[key];
+          btn.onclick = () => show(randomFrom(foodLists[key]), foodLists[key]);
+          grid.appendChild(btn);
+        }
+      });
+    }
+
+    function buildCats() {
+      const grid = document.getElementById("catGrid");
+      grid.innerHTML = "";
+      const cats = i18n[currentLang].cats;
+      Object.keys(categoryKeys).forEach(key => {
+        const btn = document.createElement("button");
+        btn.textContent = cats[key];
+        btn.onclick = () => show(randomFrom(categoryKeys[key]), categoryKeys[key]);
+        grid.appendChild(btn);
+      });
+    }
+
+    document.getElementById("retry").onclick = () => show(randomFrom(lastList), lastList);
+
+    document.getElementById("nearby").onclick = () => openMapsSearch(false);
+    document.getElementById("topRated").onclick = () => openMapsSearch(true);
+
+    function openMapsSearch(isTopRated) {
+      if (!currentQuery) return;
+
+      const buildUrl = (lat, lng) => {
+        let q = currentQuery;
+        if (isTopRated) {
+          if (currentLang === "ko") q += " 평점 높은 맛집";
+          else if (currentLang === "ja") q += " 高評価";
+          else if (currentLang === "zh") q += " 高评分";
+          else if (currentLang === "es") q = "mejores " + currentQuery;
+          else q = "best " + currentQuery + " restaurants";
+        } else {
+          if (currentLang === "ko") q += " 맛집";
+          else q += " near me";
+        }
+        // 차로 약 20분 거리 줌으로 새 탭 열기
+        const zoom = 12;
+        return `https://www.google.com/maps/search/${encodeURIComponent(q)}/@${lat},${lng},${zoom}z`;
+      };
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude: lat, longitude: lng } = pos.coords;
+            window.open(buildUrl(lat, lng), "_blank");
+          },
+          () => {
+            const fallback = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentQuery + (currentLang === "ko" ? " 맛집" : " near me"))}`;
+            window.open(fallback, "_blank");
+          },
+          { enableHighAccuracy: true, timeout: 8000 }
+        );
+      } else {
+        const fallback = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentQuery + " near me")}`;
+        window.open(fallback, "_blank");
+      }
+    }
+
+    document.getElementById("langSelect").onchange = (e) => {
+      currentLang = e.target.value;
+      localStorage.setItem("lang", currentLang);
+      updateUI();
+      // Re-show result if visible
+      if (document.getElementById("result").style.display === "block") {
+        // Keep current if possible, or just leave
+      }
+    };
+
+    // Init
+    updateUI();
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>
